@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>วันสำคัญของฉัน - Countdown & Reminder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Kanit', sans-serif; }
+        
+        @keyframes bounce-gentle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.3); }
+            50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.6); }
+        }
+        
+        @keyframes slide-up {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @keyframes number-flip {
+            0% { transform: rotateX(0deg); }
+            50% { transform: rotateX(-90deg); }
+            100% { transform: rotateX(0deg); }
+        }
+        
+        .bounce-gentle { animation: bounce-gentle 2s ease-in-out infinite; }
+        .pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+        .slide-up { animation: slide-up 0.5s ease-out; }
+        .number-flip { animation: number-flip 0.6s ease-in-out; }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .dark .glass-effect {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .dark .gradient-bg {
+            background: linear-gradient(135deg, #1e3a8a 0%, #581c87 100%);
+        }
+        
+        .notification-permission {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .notification-permission.show {
+            transform: translateX(0);
+        }
+    </style>
+</head>
+<body class="h-full gradient-bg transition-all duration-500">
+    <div id="app" class="min-h-full relative overflow-hidden">
+        <!-- Background Decoration -->
+        <div class="absolute inset-0 overflow-hidden pointer-events-none">
+            <div class="absolute -top-40 -right-40 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+            <div class="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl"></div>
+        </div>
+
+        <!-- Header -->
+        <header class="relative z-10 px-6 py-8">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex items-center justify-between">
+                    <div class="text-center sm:text-left">
+                        <h1 class="text-4xl sm:text-5xl font-bold text-white mb-2 bounce-gentle">
+                            🎉 วันสำคัญของฉัน
+                        </h1>
+                        <p class="text-white/80 text-lg">ติดตามและเตรียมพร้อมสำหรับวันพิเศษของคุณ</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button onclick="toggleDarkMode()" class="glass-effect p-3 rounded-full text-white hover:bg-white/20 transition-all duration-300">
+                            <span id="theme-icon" class="text-2xl">🌙</span>
+                        </button>
+                        <button onclick="requestNotificationPermission()" class="glass-effect px-4 py-2 rounded-full text-white hover:bg-white/20 transition-all duration-300 text-sm">
+                            🔔 แจ้งเตือน
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="relative z-10 px-6 pb-12">
+            <div class="max-w-6xl mx-auto">
+                <!-- Add Event Form -->
+                <div class="glass-effect rounded-3xl p-8 mb-8 slide-up">
+                    <h2 class="text-2xl font-semibold text-white mb-6 flex items-center">
+                        <span class="mr-3">➕</span>
+                        เพิ่มวันสำคัญใหม่
+                    </h2>
+                    
+                    <form onsubmit="addEvent(event)" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-white/80 text-sm font-medium mb-2">ชื่อเหตุการณ์</label>
+                            <input type="text" id="eventName" placeholder="เช่น วันเกิดแม่" 
+                                   class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all duration-300">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-white/80 text-sm font-medium mb-2">วันที่</label>
+                            <input type="date" id="eventDate" 
+                                   class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all duration-300">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-white/80 text-sm font-medium mb-2">หมวดหมู่</label>
+                            <select id="eventCategory" 
+                                    class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:ring-2 focus:ring-purple-400 transition-all duration-300">
+                                <option value="birthday">🎂 วันเกิด</option>
+                                <option value="anniversary">💕 วันครบรอบ</option>
+                                <option value="exam">📚 วันสอบ</option>
+                                <option value="work">💼 งาน</option>
+                                <option value="travel">✈️ ท่องเที่ยว</option>
+                                <option value="other">🌟 อื่นๆ</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex items-end">
+                            <button type="submit" 
+                                    class="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 pulse-glow">
+                                เพิ่มเหตุการณ์
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Events Grid -->
+                <div id="eventsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Events will be dynamically inserted here -->
+                </div>
+
+                <!-- No Events Message -->
+                <div id="noEvents" class="text-center py-16 hidden">
+                    <div class="text-8xl mb-4">📅</div>
+                    <h2 class="text-2xl font-semibold text-white mb-2">ยังไม่มีวันสำคัญ</h2>
+                    <p class="text-white/70">เพิ่มวันสำคัญของคุณเพื่อเริ่มเคานต์ดาวน์</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Notification Permission Popup -->
+        <div id="notificationPopup" class="notification-permission glass-effect rounded-xl p-4 text-white max-w-sm">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="font-semibold">🔔 การแจ้งเตือน</h3>
+                <button onclick="hideNotificationPopup()" class="text-white/70 hover:text-white">✕</button>
+            </div>
+            <p class="text-sm text-white/80 mb-3">อนุญาตให้เราแจ้งเตือนคุณเมื่อใกล้ถึงวันสำคัญ</p>
+            <div class="flex space-x-2">
+                <button onclick="enableNotifications()" class="flex-1 bg-green-500 hover:bg-green-600 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                    อนุญาต
+                </button>
+                <button onclick="hideNotificationPopup()" class="flex-1 bg-gray-500 hover:bg-gray-600 px-3 py-2 rounded-lg text-sm font-medium transition-colors">
+                    ไม่ใช่ตอนนี้
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let events = JSON.parse(localStorage.getItem('importantDays')) || [
+            {
+                id: 1,
+                name: 'วันเกิดแม่',
+                date: '2024-12-31',
+                category: 'birthday',
+                created: new Date().toISOString()
+            },
+            {
+                id: 2,
+                name: 'วันครบรอบแต่งงาน',
+                date: '2025-02-14',
+                category: 'anniversary',
+                created: new Date().toISOString()
+            }
+        ];
+
+        let isDarkMode = localStorage.getItem('darkMode') === 'true';
+        let countdownIntervals = {};
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            if (isDarkMode) {
+                document.documentElement.classList.add('dark');
+                document.getElementById('theme-icon').textContent = '☀️';
+            }
+            renderEvents();
+            setInterval(updateCountdowns, 1000);
+            checkUpcomingEvents();
+        });
+
+        function toggleDarkMode() {
+            isDarkMode = !isDarkMode;
+            localStorage.setItem('darkMode', isDarkMode);
+            document.documentElement.classList.toggle('dark');
+            document.getElementById('theme-icon').textContent = isDarkMode ? '☀️' : '🌙';
+        }
+
+        function addEvent(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('eventName').value;
+            const date = document.getElementById('eventDate').value;
+            const category = document.getElementById('eventCategory').value;
+            
+            if (!name || !date) {
+                alert('กรุณากรอกชื่อเหตุการณ์และวันที่');
+                return;
+            }
+
+            const event = {
+                id: Date.now(),
+                name,
+                date,
+                category,
+                created: new Date().toISOString()
+            };
+
+            events.push(event);
+            saveEvents();
+            renderEvents();
+            
+            // Reset form
+            document.getElementById('eventName').value = '';
+            document.getElementById('eventDate').value = '';
+            document.getElementById('eventCategory').value = 'birthday';
+            
+            // Show success animation
+            showNotification('✅ เพิ่มเหตุการณ์เรียบร้อยแล้ว!', 'success');
+        }
+
+        function deleteEvent(id) {
+            if (confirm('คุณต้องการลบเหตุการณ์นี้หรือไม่?')) {
+                events = events.filter(event => event.id !== id);
+                saveEvents();
+                renderEvents();
+                showNotification('🗑️ ลบเหตุการณ์แล้ว', 'info');
+            }
+        }
+
+        function renderEvents() {
+            const grid = document.getElementById('eventsGrid');
+            const noEvents = document.getElementById('noEvents');
+            
+            if (events.length === 0) {
+                grid.innerHTML = '';
+                noEvents.classList.remove('hidden');
+                return;
+            }
+            
+            noEvents.classList.add('hidden');
+            
+            // Sort events by date
+            const sortedEvents = [...events].sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            grid.innerHTML = sortedEvents.map(event => {
+                const { days, hours, minutes, seconds, isPast } = getTimeRemaining(event.date);
+                const categoryInfo = getCategoryInfo(event.category);
+                
+                return `
+                    <div class="glass-effect rounded-2xl p-6 slide-up hover:bg-white/20 transition-all duration-300 transform hover:scale-105">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="text-3xl">${categoryInfo.emoji}</div>
+                            <button onclick="deleteEvent(${event.id})" 
+                                    class="text-white/50 hover:text-red-400 transition-colors duration-300 text-xl">
+                                🗑️
+                            </button>
+                        </div>
+                        
+                        <h3 class="text-xl font-semibold text-white mb-2">${event.name}</h3>
+                        <p class="text-white/70 text-sm mb-4">${categoryInfo.label} • ${formatDate(event.date)}</p>
+                        
+                        ${isPast ? 
+                            `<div class="text-center py-4">
+                                <div class="text-4xl mb-2">🎊</div>
+                                <p class="text-white font-semibold">เหตุการณ์นี้ผ่านไปแล้ว</p>
+                            </div>` :
+                            `<div class="countdown-timer text-center">
+                                <div class="grid grid-cols-2 gap-4 mb-3">
+                                    <div class="bg-white/10 rounded-xl p-3">
+                                        <div class="text-2xl font-bold text-white number-flip" id="days-${event.id}">${days}</div>
+                                        <div class="text-white/70 text-xs">วัน</div>
+                                    </div>
+                                    <div class="bg-white/10 rounded-xl p-3">
+                                        <div class="text-2xl font-bold text-white number-flip" id="hours-${event.id}">${hours}</div>
+                                        <div class="text-white/70 text-xs">ชั่วโมง</div>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="bg-white/10 rounded-xl p-3">
+                                        <div class="text-2xl font-bold text-white number-flip" id="minutes-${event.id}">${minutes}</div>
+                                        <div class="text-white/70 text-xs">นาที</div>
+                                    </div>
+                                    <div class="bg-white/10 rounded-xl p-3">
+                                        <div class="text-2xl font-bold text-white number-flip" id="seconds-${event.id}">${seconds}</div>
+                                        <div class="text-white/70 text-xs">วินาที</div>
+                                    </div>
+                                </div>
+                                ${days <= 7 && days >= 0 ? 
+                                    `<div class="mt-4 bg-gradient-to-r from-yellow-400/20 to-orange-400/20 rounded-xl p-3 border border-yellow-400/30">
+                                        <div class="text-yellow-300 text-sm font-medium">⚠️ ใกล้ถึงแล้ว!</div>
+                                    </div>` : ''
+                                }
+                            </div>`
+                        }
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateCountdowns() {
+            events.forEach(event => {
+                const { days, hours, minutes, seconds, isPast } = getTimeRemaining(event.date);
+                
+                if (!isPast) {
+                    const daysEl = document.getElementById(`days-${event.id}`);
+                    const hoursEl = document.getElementById(`hours-${event.id}`);
+                    const minutesEl = document.getElementById(`minutes-${event.id}`);
+                    const secondsEl = document.getElementById(`seconds-${event.id}`);
+                    
+                    if (daysEl) daysEl.textContent = days;
+                    if (hoursEl) hoursEl.textContent = hours;
+                    if (minutesEl) minutesEl.textContent = minutes;
+                    if (secondsEl) {
+                        if (secondsEl.textContent !== seconds.toString()) {
+                            secondsEl.classList.add('number-flip');
+                            setTimeout(() => secondsEl.classList.remove('number-flip'), 600);
+                        }
+                        secondsEl.textContent = seconds;
+                    }
+                }
+            });
+        }
+
+        function getTimeRemaining(dateString) {
+            const eventDate = new Date(dateString);
+            const now = new Date();
+            const timeDiff = eventDate.getTime() - now.getTime();
+            
+            if (timeDiff <= 0) {
+                return { days: 0, hours: 0, minutes: 0, seconds: 0, isPast: true };
+            }
+            
+            const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+            
+            return { days, hours, minutes, seconds, isPast: false };
+        }
+
+        function getCategoryInfo(category) {
+            const categories = {
+                birthday: { emoji: '🎂', label: 'วันเกิด' },
+                anniversary: { emoji: '💕', label: 'วันครบรอบ' },
+                exam: { emoji: '📚', label: 'วันสอบ' },
+                work: { emoji: '💼', label: 'งาน' },
+                travel: { emoji: '✈️', label: 'ท่องเที่ยว' },
+                other: { emoji: '🌟', label: 'อื่นๆ' }
+            };
+            return categories[category] || categories.other;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+
+        function saveEvents() {
+            localStorage.setItem('importantDays', JSON.stringify(events));
+        }
+
+        function checkUpcomingEvents() {
+            const now = new Date();
+            events.forEach(event => {
+                const eventDate = new Date(event.date);
+                const timeDiff = eventDate.getTime() - now.getTime();
+                const daysUntil = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+                
+                if (daysUntil === 1) {
+                    scheduleNotification(event, 'พรุ่งนี้');
+                } else if (daysUntil === 7) {
+                    scheduleNotification(event, 'อีก 7 วัน');
+                }
+            });
+        }
+
+        function scheduleNotification(event, timeText) {
+            if (Notification.permission === 'granted') {
+                const categoryInfo = getCategoryInfo(event.category);
+                new Notification(`${categoryInfo.emoji} ${event.name}`, {
+                    body: `${timeText}จะถึงแล้ว! เตรียมตัวให้พร้อม`,
+                    icon: '/favicon.ico'
+                });
+            }
+        }
+
+        function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                showNotification('⚠️ เบราว์เซอร์นี้ไม่รองรับการแจ้งเตือน', 'warning');
+                return;
+            }
+
+            if (Notification.permission === 'default') {
+                document.getElementById('notificationPopup').classList.add('show');
+            } else if (Notification.permission === 'granted') {
+                showNotification('✅ การแจ้งเตือนเปิดใช้งานแล้ว', 'success');
+            } else {
+                showNotification('❌ การแจ้งเตือนถูกปิดใช้งาน', 'error');
+            }
+        }
+
+        function enableNotifications() {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    showNotification('🔔 เปิดการแจ้งเตือนเรียบร้อยแล้ว!', 'success');
+                    hideNotificationPopup();
+                } else {
+                    showNotification('❌ ไม่สามารถเปิดการแจ้งเตือนได้', 'error');
+                }
+            });
+        }
+
+        function hideNotificationPopup() {
+            document.getElementById('notificationPopup').classList.remove('show');
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 glass-effect rounded-xl p-4 text-white transform translate-x-full transition-transform duration-300`;
+            notification.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <div class="text-lg">${type === 'success' ? '✅' : type === 'warning' ? '⚠️' : type === 'error' ? '❌' : 'ℹ️'}</div>
+                    <span class="font-medium">${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Set minimum date to today
+        document.getElementById('eventDate').min = new Date().toISOString().split('T')[0];
+    </script>
+</body>
+</html>
