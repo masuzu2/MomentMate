@@ -87,7 +87,7 @@
                         <p class="text-white/80 text-lg">ติดตามและเตรียมพร้อมสำหรับวันพิเศษของคุณ</p>
                     </div>
                     <div class="flex items-center space-x-4">
-                        <button onclick="toggleDarkMode()" class="glass-effect p-3 rounded-full text-white hover:bg-white/20 transition-all duration-300">
+                        <button onclick="toggleDarkMode()" class="glass-effect p-3 rounded-full text-white hover:bg-white/20 transition-all duration-300" aria-label="Toggle theme">
                             <span id="theme-icon" class="text-2xl">🌙</span>
                         </button>
                         <button onclick="requestNotificationPermission()" class="glass-effect px-4 py-2 rounded-full text-white hover:bg-white/20 transition-all duration-300 text-sm">
@@ -222,7 +222,7 @@
             const category = document.getElementById('eventCategory').value;
             
             if (!name || !date) {
-                alert('กรุณากรอกชื่อเหตุการณ์และวันที่');
+                showNotification('กรุณากรอกชื่อเหตุการณ์และวันที่', 'warning');
                 return;
             }
 
@@ -296,21 +296,21 @@
                             `<div class="countdown-timer text-center">
                                 <div class="grid grid-cols-2 gap-4 mb-3">
                                     <div class="bg-white/10 rounded-xl p-3">
-                                        <div class="text-2xl font-bold text-white number-flip" id="days-${event.id}">${days}</div>
+                                        <div class="text-2xl font-bold text-white" id="days-${event.id}">${days}</div>
                                         <div class="text-white/70 text-xs">วัน</div>
                                     </div>
                                     <div class="bg-white/10 rounded-xl p-3">
-                                        <div class="text-2xl font-bold text-white number-flip" id="hours-${event.id}">${hours}</div>
+                                        <div class="text-2xl font-bold text-white" id="hours-${event.id}">${hours}</div>
                                         <div class="text-white/70 text-xs">ชั่วโมง</div>
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div class="bg-white/10 rounded-xl p-3">
-                                        <div class="text-2xl font-bold text-white number-flip" id="minutes-${event.id}">${minutes}</div>
+                                        <div class="text-2xl font-bold text-white" id="minutes-${event.id}">${minutes}</div>
                                         <div class="text-white/70 text-xs">นาที</div>
                                     </div>
                                     <div class="bg-white/10 rounded-xl p-3">
-                                        <div class="text-2xl font-bold text-white number-flip" id="seconds-${event.id}">${seconds}</div>
+                                        <div class="text-2xl font-bold text-white" id="seconds-${event.id}">${seconds}</div>
                                         <div class="text-white/70 text-xs">วินาที</div>
                                     </div>
                                 </div>
@@ -411,8 +411,7 @@
             if (Notification.permission === 'granted') {
                 const categoryInfo = getCategoryInfo(event.category);
                 new Notification(`${categoryInfo.emoji} ${event.name}`, {
-                    body: `${timeText}จะถึงแล้ว! เตรียมตัวให้พร้อม`,
-                    icon: '/favicon.ico'
+                    body: `${timeText}จะถึงแล้ว! เตรียมตัวให้พร้อม`
                 });
             }
         }
